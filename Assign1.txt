@@ -1,0 +1,136 @@
+1. Define variables before you use them [5 points] 
+2. Primal and dual forms of hard and soft margin SVMs [20 points] 
+3. Concept of support vectors (two types) [10 points] 
+4. Discussions on why max margin is good [5 points]
+5. Experiments
+(a) compare your w, b obtained via solving the primal problem, with the w, b reconstructed by the dual variables obtained via solving the dual problem (both the results and the reconstruction formulation) [5 points]
+(b) check duality gap of yours (both the result and the formulation) [5 points]
+(c) compare your w, b, α with those of libsvm [5 points]
+(d) compare training and testing errors of your code and libsvm [5 points]
+(e) code [40 points]
+
+For very large data sets a feasible approach is to randomly choose a subset of the data set, conduct grid-search on them, and then do a better-region-only grid-search on the complete data set.
+*guide.pdf p.8*
+
+All SVM formulations supported in LIBSVM are quadratic minimization problems. 
+LIBSVR
+*libsvm.pdf p.2*
+
+Two implementation techniques to reduce the running time for minimizing SVM quadratic problems: shrinking and caching. 
+*libsvm.pdf p.2*
+
+ν-support vector regression (ν-SVR)
+
+All LIBSVM’s training and testing algorithms are implemented in the ﬁle svm.cpp. The two main sub-routines are svm train and svm predict. The training procedure is more sophisticated, so we give the code organization in Figure 1. From Figure 1, for classiﬁcation, svm train decouples a multi-class problem to two-class problems (see Section 7) and calls svm train one several times. For regression and one-class SVM, it directly calls svm train one. The probability outputs for classiﬁcation and regression are also handled in svm train. Then, according to the SVM formulation, svm train one calls a corresponding sub-routine such as solve c svc for C-SVC and solve nu svc for ν-SVC. All solve * sub-routines call the solver Solve after preparing suitable input values. The sub-routine Solve minimizes a general form of SVM optimization problems; see (11) and (22). Details of the sub-routine Solve are described in Sections 4-6.
+*libsvm.pdf p.4*
+
+Comparison of standard forms, dual problems, and optimal solutions for SVM formulations
+
+Summary of SVM formulations in LIBSVM
+
+Ref1_____________________________|Ref2_________________________________|Ref3_____________________________________________|Ref4_____________________________________________|Ref5_______________________________________________________|
+C-Support Vector Classiﬁcation___|ν-Support Vector Classiﬁcation_______|Distribution Estimation (One-class SVM)__________|\epsilon-Support Vector Regression (\epsilon-SVR)|ν-Support Vector Regression (ν-SVR)________________________|
+*libsvm.pdf p.3-7*
+
+Performance Measures: Accuracy, MSE (mean squared error) and r2 (squared correlation coeﬃcient).
+
+All LIBSVM’s training and testing algorithms are implemented in the ﬁle svm.cpp. 
+The two main sub-routines are svm train and svm predict.
+Then, according to the SVM formulation, svm train one calls a corresponding sub-routine such as solve c svc for C-SVC and solve nu svc for ν-SVC.
+
+The sub-routine Solve minimizes a general form of SVM optimization problems; see (11) and (22). Details of the sub-routine Solve are described in Sections 4-6.
+
+optimization for one linear constraint:  C-SVC, -SVR, and One-class SVM
+*libsvm.pdf p.10-15*
+
+optimization for two linear constraint:  νSVC and ν-SVR
+*libsvm.pdf p.15*
+
+A.1 Astroparticle Physics • Original sets with default parameters
+$ ./svm-train svmguide1 $ ./svm-predict svmguide1.t svmguide1.model svmguide1.t.predict → Accuracy = 66.925% • Scaled sets with default parameters
+$ ./svm-scale -l -1 -u 1 -s range1 svmguide1 > svmguide1.scale $ ./svm-scale -r range1 svmguide1.t > svmguide1.t.scale $ ./svm-train svmguide1.scale $ ./svm-predict svmguide1.t.scale svmguide1.scale.model svmguide1.t.predict → Accuracy = 96.15% • Scaled sets with parameter selection (change to the directory tools, which contains grid.py)
+$ python grid.py svmguide1.scale ··· 2.0 2.0 96.8922
+(Best C=2.0, γ=2.0 with ﬁve-fold cross-validation rate=96.8922%)
+$ ./svm-train -c 2 -g 2 svmguide1.scale $ ./svm-predict svmguide1.t.scale svmguide1.scale.model svmguide1.t.predict → Accuracy = 96.875% • Using an automatic script
+$ python easy.py svmguide1 svmguide1.t Scaling training data... Cross validation...
+9
+Best c=2.0, g=2.0 Training... Scaling testing data... Testing... Accuracy = 96.875% (3875/4000) (classification)
+
+
+Using the same scaling factors for training and testing sets, we obtain much better accuracy.
+$ ../svm-scale -l 0 -s range4 svmguide4 > svmguide4.scale $ ../svm-scale -r range4 svmguide4.t > svmguide4.t.scale $ python easy.py svmguide4.scale svmguide4.t.scale Accuracy = 89.4231% (279/312) (classification)
+
+• RBF kernel with parameter selection
+$ cat leu leu.t > leu.combined $ python grid.py leu.combined ··· 8.0 3.0517578125e-05 97.2222
+(Best C=8.0, γ = 0.000030518 with ﬁve-fold cross-validation rate=97.2222%)
+• Linear kernel with parameter selection
+$ python grid.py -log2c -1,2,1 -log2g 1,1,1 -t 0 leu.combined ··· 0.5 2.0 98.6111
+(Best C=0.5 with ﬁve-fold cross-validation rate=98.61111%)
+Though grid.py was designed for the RBF kernel, the above way checks various C using the linear kernel (-log2g 1,1,1 sets a dummy γ).
+
+LIBLINEAR is eﬃcient for large-scale document classiﬁcation. Let us consider a large set rcv1 test.binary with 677,399 instances.
+$ time liblinear-1.21/train -c 0.25 -v 5 rcv1_test.binary Cross Validation Accuracy = 97.8538% 68.84s
+
+ Consider the data http://www.csie. ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/covtype.libsvm.binary.scale. bz2. The number of instances 581,012 is much larger than the number of features 54. We run LIBLINEAR with -s 1 (default) and -s 2.
+$ time liblinear-1.21/train -c 4 -v 5 -s 2 covtype.libsvm.binary.scale Cross Validation Accuracy = 75.67% 67.224s $ time liblinear-1.21/train -c 4 -v 5 -s 1 covtype.libsvm.binary.scale
+14
+Cross Validation Accuracy = 75.6711% 452.736s
+Clearly, using -s 2 leads to shorter training time.
+
+We have shown that the KKT condition of problem (22) implies Eqs. (25) and (26) according to yi = 1 and −1, respectively.
+Now we consider the case of yi = 1. If there exists αi such that 0 < αi < C, then we obtain r1 = ∇if(α). In LIBSVM, for numerical stability, we average these values. 
+
+*guide.pdf p.8-14*
+
+We found that if the number of iterations is large, then shrinking can shorten the training time. However, if we loosely solve the optimization problem (e.g., by using a large stopping tolerance ), the code without using shrinking may be much faster. In this situation, because of the small number of iterations, the time spent on all decomposition iterations can be even less than one single gradient reconstruction. 
+*libsvm.pdf p.25*
+
+C:\Users\wendy\Desktop\libsvm3.2.3\libsvm-3.23\windows>svm-train.exe a2a.train
+*
+optimization finished, #iter = 796
+nu = 0.461826
+obj = -971.667542, rho = 0.585499
+nSV = 1068, nBSV = 1028
+Total nSV = 1068
+
+C:\Users\wendy\Desktop\libsvm3.2.3\libsvm-3.23\windows>dir
+ 驱动器 C 中的卷是 OS
+ 卷的序列号是 F27A-BA5A
+
+ C:\Users\wendy\Desktop\libsvm3.2.3\libsvm-3.23\windows 的目录
+
+2019/08/22  11:19    <DIR>          .
+2019/08/22  11:19    <DIR>          ..
+2019/08/22  10:45         2,167,822 a2a.test
+2019/08/22  10:43           162,053 a2a.train
+2019/08/22  11:19            77,993 a2a.train.model
+2019/08/22  11:04           258,048 libsvm.dll
+2019/08/22  11:04            14,336 libsvmread.mexw64
+2019/08/22  11:03            13,312 libsvmwrite.mexw64
+2019/08/22  11:04           211,968 svm-predict.exe
+2019/08/22  11:04           165,376 svm-scale.exe
+2019/08/22  11:03           226,816 svm-toy.exe
+2019/08/22  11:04           247,808 svm-train.exe
+2019/08/22  11:04            28,160 svmpredict.mexw64
+2019/08/22  11:04            68,608 svmtrain.mexw64
+              12 个文件      3,642,300 字节
+               2 个目录 423,082,975,232 可用字节
+
+C:\Users\wendy\Desktop\libsvm3.2.3\libsvm-3.23\windows>svm-predict.exe
+Usage: svm-predict [options] test_file model_file output_file
+options:
+-b probability_estimates: whether to predict probability estimates, 0 or 1 (default 0); for one-class SVM only 0 is supported
+-q : quiet mode (no outputs)
+
+C:\Users\wendy\Desktop\libsvm3.2.3\libsvm-3.23\windows>svm-predict.exe a2a.test a2a.train.model a2a.out
+Accuracy = 83.9781% (25442/30296) (classification)
+
+ We can divide this process broadly into 4 stages. Each stage requires a certain amount of time to execute:
+
+Loading and pre-processing Data – 30% time
+Defining Model architecture – 10% time
+Training the model – 50% time
+Estimation of performance – 10% time
+
+
+
